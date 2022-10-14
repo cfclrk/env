@@ -22,9 +22,10 @@ This package provides two interactive functions:
 
 @enumerate
 @item
-@samp{envars}: Set all the environment variables defined in an env file.
+@samp{envars-set-file}: Set all the environment variables defined in an env
+file.
 @item
-@samp{envars-unset}: Unset all the environment variables defined in an env
+@samp{envars-unset-file}: Unset all the environment variables defined in an env
 file.
 @end enumerate
 
@@ -50,8 +51,8 @@ Usage
 @node Usage
 @chapter Usage
 
-Start by creating an env file in @samp{envars-dir} (by default, @samp{~/.env/}).
-For example, create this file in @samp{~/.env/foo}:
+Start by creating an env file in @samp{envars-dir} (by default, @samp{~/.env/}). For
+example, create this file in @samp{~/.env/foo}:
 
 @example
 FOO=~/foo
@@ -64,10 +65,10 @@ Now, you can run:
 
 @itemize
 @item
-@samp{M-x envars}, which will prompt you for a file. All the environment
+@samp{M-x envars-set-file}, which will prompt you for a file. All the environment
 variables defined in the file will be @strong{set}.
 @item
-@samp{M-x envars-unset}, which will prompt you for a file. All the
+@samp{M-x envars-unset-file}, which will prompt you for a file. All the
 environment variables defined in the file will be @strong{unset}.
 @end itemize
 
@@ -82,13 +83,13 @@ environment variables defined in the file will be @strong{unset}.
 To set env variables defined in @samp{~/.env/foo}:
 
 @lisp
-(envars (expand-file-name "~/.env/foo"))
+(envars-set-file (expand-file-name "~/.env/foo"))
 @end lisp
 
 Or, if you have a string instead of a file:
 
 @lisp
-(envars-str "FOO=foo\nBAR=bar")
+(envars-set-str "FOO=foo\nBAR=bar")
 @end lisp
 
 @node Usage from org-mode
@@ -126,7 +127,7 @@ Define an environment variable and use it in successive lines
 @item
 A @samp{~} is expanded if it is the first character in the value
 @item
-If a value starts with @samp{nosubst:}, no variable substitution will be
+If a value starts with `nosubst:`, no variable substitution will be
 performed. You need this if there is a literal @samp{$} in the value.
 @end itemize
 

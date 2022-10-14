@@ -10,9 +10,10 @@ Set or unset environment variables from an "env" or dotenv file.
 
    This package provides two interactive functions:
 
-  1. ‘envars’: Set all the environment variables defined in an env file.
-  2. ‘envars-unset’: Unset all the environment variables defined in an
+  1. ‘envars-set-file’: Set all the environment variables defined in an
      env file.
+  2. ‘envars-unset-file’: Unset all the environment variables defined in
+     an env file.
 
    When used interactively, each function prompts for a file.  By
 default, the prompt begins at ‘envars-dir’.
@@ -46,9 +47,9 @@ For example, create this file in ‘~/.env/foo’:
 
    Now, you can run:
 
-   • ‘M-x envars’, which will prompt you for a file.  All the
+   • ‘M-x envars-set-file’, which will prompt you for a file.  All the
      environment variables defined in the file will be *set*.
-   • ‘M-x envars-unset’, which will prompt you for a file.  All the
+   • ‘M-x envars-unset-file’, which will prompt you for a file.  All the
      environment variables defined in the file will be *unset*.
 
 * Menu:
@@ -64,11 +65,11 @@ File: envars.info,  Node: Usage from Elisp,  Next: Usage from org-mode,  Up: Usa
 
 To set env variables defined in ‘~/.env/foo’:
 
-     (envars (expand-file-name "~/.env/foo"))
+     (envars-set-file (expand-file-name "~/.env/foo"))
 
    Or, if you have a string instead of a file:
 
-     (envars-str "FOO=foo\nBAR=bar")
+     (envars-set-str "FOO=foo\nBAR=bar")
 
 
 File: envars.info,  Node: Usage from org-mode,  Prev: Usage from Elisp,  Up: Usage
@@ -104,17 +105,17 @@ so most shell-isms will not work.  However, the env file may:
    • Use existing environment variables
    • Define an environment variable and use it in successive lines
    • A ‘~’ is expanded if it is the first character in the value
-   • If a value starts with ‘nosubst:’, no variable substitution will be
+   • If a value starts with ‘nosubst:‘, no variable substitution will be
      performed.  You need this if there is a literal ‘$’ in the value.
 
 
 
 Tag Table:
 Node: Top73
-Node: Usage674
-Node: Usage from Elisp1325
-Node: Usage from org-mode1638
-Node: File Format2186
+Node: Usage693
+Node: Usage from Elisp1358
+Node: Usage from org-mode1684
+Node: File Format2232
 
 End Tag Table
 

@@ -8,47 +8,47 @@
 
 ;;; Code:
 
-(ert-deftest envars/simple ()
-  "Test running `envars' to set env vars."
+(ert-deftest envars-set-file/simple ()
+  "Test running `envars-set-file'."
   (with-process-environment '()
     (let ((test-file (proj-file "test/examples/variables")))
-      (envars test-file)
+      (envars-set-file test-file)
       (should (equal "foo" (getenv "FOO")))
       (should (equal "foo-bar" (getenv "BAR")))
       (should (equal (expand-file-name "~/cats") (getenv "BAZ"))))))
 
-(ert-deftest envars/with-prefix-arg ()
-  "Test running `envars' with a prefix arg to unset simple
-env vars."
+(ert-deftest envars-set-file/with-prefix-arg ()
+  "Test running `envars-set-file' with a prefix arg.
+
+This should unset the env vars."
   (with-process-environment '("FOO=foo" "BAR=bar")
     (let ((test-file (proj-file "test/examples/simple"))
           (current-prefix-arg 4))
-      (envars test-file)
+      (envars-set-file test-file)
       (should (equal nil (getenv "FOO")))
       (should (equal nil (getenv "BAR")))
       (should (equal '() process-environment)))))
 
-(ert-deftest envars/multibyte ()
-  "Test running `envars' to set env vars with multibyte characters."
+(ert-deftest envars-set-file/multibyte ()
+  "Test `envars-set-file' with multibyte characters."
   (with-process-environment '()
     (should (equal nil (getenv "A")))
     (let ((test-file (proj-file "test/examples/multibyte")))
-      (envars test-file)
+      (envars-set-file test-file)
       (should (equal "Д" (getenv "Ф")))
       (should (equal "µ" (getenv "¥")))
       (should (equal '("\302\245=\302\265" "\320\244=\320\224")
                      process-environment)))))
 
-(ert-deftest envars/multibyte-with-prefix-arg ()
-  "Test running `envars' with a prefix arg to unset
-multibyte env vars."
+(ert-deftest envars-set-file/multibyte-with-prefix-arg ()
+  "Test `envars-set-file' with a prefix arg and multibyte chars."
   (with-process-environment
       '("\302\245=\302\265" "\320\244=\320\224")
     (should (equal "Д" (getenv "Ф")))
     (should (equal "µ" (getenv "¥")))
     (let ((test-file (proj-file "test/examples/multibyte"))
           (current-prefix-arg 4))
-      (envars test-file)
+      (envars-set-file test-file)
       (should (equal nil (getenv "Ф")))
       (should (equal nil (getenv "¥"))))))
 
@@ -56,7 +56,7 @@ multibyte env vars."
   "Test running `envars-set-pairs' to set env vars."
   (with-process-environment '()
     (envars-set-pairs '(("A" "a")
-                                ("B" "nosubst:R$%!$KP$")))
+                        ("B" "nosubst:R$%!$KP$")))
     (should (equal "a" (getenv "A")))
     (should (equal "R$%!$KP$" (getenv "B")))
     (should (equal '("B=R$%!$KP$" "A=a") process-environment))))

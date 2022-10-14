@@ -9,9 +9,10 @@
 ;;
 ;; This package provides two interactive functions:
 ;;
-;; 1.  `envars`: Set all the environment variables defined in an env file.
-;; 2.  `envars-unset`: Unset all the environment variables defined in an env
+;; 1.  `envars-set-file`: Set all the environment variables defined in an env
 ;;     file.
+;; 2.  `envars-unset-file`: Unset all the environment variables defined in an
+;;     env file.
 ;;
 ;; When used interactively, each function prompts for a file. By default, the
 ;; prompt begins at `envars-dir`.
@@ -19,7 +20,7 @@
 ;;
 ;; # Usage
 ;;
-;; Start by creating an env file in `envars-dir` (by default, `~/.env/`).  For
+;; Start by creating an env file in `envars-dir` (by default, `~/.env/`). For
 ;; example, create this file in `~/.env/foo`:
 ;;
 ;;     FOO=~/foo
@@ -29,21 +30,21 @@
 ;;
 ;; Now, you can run:
 ;;
-;; -   `M-x envars`, which will prompt you for a file. All the environment
-;;     variables defined in the file will be **set**.
-;; -   `M-x envars-unset`, which will prompt you for a file. All the environment
-;;     variables defined in the file will be **unset**.
+;; -   `M-x envars-set-file`, which will prompt you for a file. All the
+;;     environment variables defined in the file will be **set**.
+;; -   `M-x envars-unset-file`, which will prompt you for a file. All the
+;;     environment variables defined in the file will be **unset**.
 ;;
 ;;
 ;; ## Usage from Elisp
 ;;
 ;; To set env variables defined in `~/.env/foo`:
 ;;
-;;     (envars (expand-file-name "~/.env/foo"))
+;;     (envars-set-file (expand-file-name "~/.env/foo"))
 ;;
 ;; Or, if you have a string instead of a file:
 ;;
-;;     (envars-str "FOO=foo\nBAR=bar")
+;;     (envars-set-str "FOO=foo\nBAR=bar")
 ;;
 ;;
 ;; ## Usage from org-mode
@@ -73,7 +74,7 @@
 ;; -   Use existing environment variables
 ;; -   Define an environment variable and use it in successive lines
 ;; -   A `~` is expanded if it is the first character in the value
-;; -   If a value starts with `nosubst:`, no variable substitution will be
+;; -   If a value starts with \`nosubst:\`, no variable substitution will be
 ;;     performed. You need this if there is a literal `$` in the value.
 ;;
 ;;; Code:
@@ -84,7 +85,7 @@
 
 ;;; Options
 
-(defgroup envars nil
+(defgroup envars ()
   "Utilities to set and unset environment variables in Emacs."
   :group 'environment
   :prefix "envars-"
@@ -95,48 +96,48 @@
   :group 'envars
   :type 'file)
 
-;;; Public
+;;; Public functions
 
-(defun envars (file-path)
-  "Set or unset environment variables from file FILE-PATH.
+(defun envars-set-file (file-path)
+  "Set or unset environment variables defined in FILE-PATH.
 
-When used interactively, `envars' prompts for the file
-to load, defaulting to the directory `source-env-dir'.
+When used interactively, prompts for the file to load. Default
+directory is `envars-dir'.
 
-The env file FILE-PATH may make use of existing environment
+The env file at FILE-PATH may make use of existing environment
 variables, and tildes are expanded if they are the first
-character of the value. However, other shell-isms will not work.
+character of the value. However, other shellisms will not work.
 
 Prefixed with one \\[universal-argument], unset the environment
-variables defined in file F."
+variables defined in file FILE-PATH."
   (interactive (list (read-file-name "ENV file: " envars-dir)))
   (let ((str (f-read-text file-path)))
     (if current-prefix-arg
         (envars-unset-str str)
-      (envars-str str))))
+      (envars-set-str str))))
 
-(defun envars-unset (file-path)
-  "Unset environment variables from file FILE-PATH.
+(defun envars-unset-file (file-path)
+  "Unset the environment variables definedd in FILE-PATH.
 
-See the documentation for `envars'."
+See the documentation for `envars-set-file'."
   (interactive (list (read-file-name "ENV file: " envars-dir)))
   (let ((str (f-read-text file-path)))
     (envars-unset-str str)))
 
-(defun envars-str (str)
-  "Set environment variables from string STR.
+(defun envars-set-str (str)
+  "Set environment variables defined in string STR.
 
-Parse STR as an env file. See the documentation for
-`envars'."
+Parse STR like an env file. See the documentation for
+`envars-set-file'."
   (let* ((lines (s-lines (s-trim str)))
          (pairs (--map (s-split "=" it) lines)))
     (envars-set-pairs pairs)))
 
 (defun envars-unset-str (str)
-  "Unset environment variables from string STR.
+  "Unset environment variables defined in string STR.
 
-Parse STR as an env file. See the documentation for
-`envars'."
+Parse STR like an env file. See the documentation for
+`envars-set-file'."
   (let* ((lines (s-lines (s-trim str)))
          (pairs (--map (s-split "=" it) lines)))
     (envars-unset-pairs pairs)))
@@ -159,7 +160,7 @@ of each pair is discarded, as the environment variable will be
 unset regardless of its value."
   (envars--unset-names (-map 'car pairs)))
 
-;;; Private
+;;; Private functions
 
 (defun envars--export-pair (pair)
   "Set an environment variable PAIR.
@@ -169,22 +170,23 @@ variable name and the second element is the value.
 If the second element begins with a ~, it is treated as a file
 path and expanded.
 
-If the second element begins with nosubst:, it is treated as a
-literal string, and no variable interpolation is performed."
+If the second element begins with 'nosubst:', the value is
+treated as a literal string, and no variable interpolation is
+performed."
   (let* ((name (car pair))
          (val (car (cdr pair)))
 
-         ;; if the value of the pair is an number, convert it to a string
+         ;; If the value of the pair is an number, convert it to a string
          (string_val (if (numberp val)
                          (number-to-string val)
                        val))
 
-         ;; if the value starts with ~, expand it like a path
+         ;; If the value starts with ~, expand it like a path
          (full_val (if (string-prefix-p "~" string_val)
                        (expand-file-name string_val)
                      string_val)))
 
-    ;; if the value starts with "nosubst:", do not do variable interpolation
+    ;; If the value starts with "nosubst:", do not do variable interpolation
     (if (string-prefix-p "nosubst:" full_val)
         (setenv name (s-chop-prefix "nosubst:" full_val))
       (setenv name full_val t))))
@@ -202,8 +204,9 @@ Unset environment variable NAME by removing it from
 `process-environment' if it is there.
 
 Note: calling `setenv' with a prefix argument sets the variable's
-value to nil, but the variable is still present. This function
-completely removes the variable from `process-environment'."
+value to nil, but the variable remains in `process-environment'.
+This function completely removes the variable from
+`process-environment'."
   (let* ((name (if (multibyte-string-p name)
                    (encode-coding-string name locale-coding-system t)
                  name))

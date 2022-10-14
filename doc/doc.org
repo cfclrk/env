@@ -1,14 +1,15 @@
 #+TITLE: envars
 #+OPTIONS: toc:nil
 
-* envars                                 :readme:commentary:info:ignore:
+* envars                                      :readme:commentary:info:ignore:
 
   Set or unset environment variables from an "env" or dotenv file.
 
   This package provides two interactive functions:
 
-  1. =envars=: Set all the environment variables defined in an env file.
-  2. =envars-unset=: Unset all the environment variables defined in an env
+  1. =envars-set-file=: Set all the environment variables defined in an env
+     file.
+  2. =envars-unset-file=: Unset all the environment variables defined in an env
      file.
 
   When used interactively, each function prompts for a file. By default, the
@@ -27,14 +28,14 @@
   #+begin_src emacs-lisp
     (straight-use-package
      '(envars :type git
-                   :host github
-                   :repo "cfclrk/envars"))
+              :host github
+              :repo "cfclrk/envars"))
   #+end_src
 
 * Usage                                              :readme:commentary:info:
 
-  Start by creating an env file in =envars-dir= (by default, =~/.env/=).
-  For example, create this file in =~/.env/foo=:
+  Start by creating an env file in =envars-dir= (by default, =~/.env/=). For
+  example, create this file in =~/.env/foo=:
 
   #+begin_src sh
     FOO=~/foo
@@ -45,9 +46,9 @@
 
   Now, you can run:
 
-  - =M-x envars=, which will prompt you for a file. All the environment
+  - =M-x envars-set-file=, which will prompt you for a file. All the environment
     variables defined in the file will be *set*.
-  - =M-x envars-unset=, which will prompt you for a file. All the
+  - =M-x envars-unset-file=, which will prompt you for a file. All the
     environment variables defined in the file will be *unset*.
 
 ** Usage from Elisp
@@ -55,13 +56,13 @@
    To set env variables defined in =~/.env/foo=:
 
    #+begin_src emacs-lisp
-     (envars (expand-file-name "~/.env/foo"))
+     (envars-set-file (expand-file-name "~/.env/foo"))
    #+end_src
 
    Or, if you have a string instead of a file:
 
    #+begin_src emacs-lisp
-     (envars-str "FOO=foo\nBAR=bar")
+     (envars-set-str "FOO=foo\nBAR=bar")
    #+end_src
 
 ** Usage from org-mode
@@ -92,7 +93,7 @@
   - Use existing environment variables
   - Define an environment variable and use it in successive lines
   - A =~= is expanded if it is the first character in the value
-  - If a value starts with =nosubst:=, no variable substitution will be
+  - If a value starts with `nosubst:`, no variable substitution will be
     performed. You need this if there is a literal =$= in the value.
 
 * Development                                                        :readme:
@@ -116,9 +117,6 @@
   TODO: Maybe this isn't the way to do it. Another possibility is to use the
   =sh= shell to evaluate the file, and then diff the result against the current
   environment. I /think/ that is what =direnv= does.
-
-  TODO: Make envars-set and envars-unset functions. Can they just be
-  aliases?
 
   - Test to ensure multibyte strings are normalized
   - Test value surrounded quotes

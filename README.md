@@ -4,8 +4,9 @@ Set or unset environment variables from an "env" or dotenv file.
 
 This package provides two interactive functions:
 
-1.  `envars`: Set all the environment variables defined in an env file.
-2.  `envars-unset`: Unset all the environment variables defined in an env file.
+1.  `envars-set-file`: Set all the environment variables defined in an env file.
+2.  `envars-unset-file`: Unset all the environment variables defined in an env
+    file.
 
 When used interactively, each function prompts for a file. By default, the
 prompt begins at `envars-dir`.
@@ -24,8 +25,8 @@ Or, using straight:
 ```emacs-lisp
 (straight-use-package
  '(envars :type git
-	       :host github
-	       :repo "cfclrk/envars"))
+	  :host github
+	  :repo "cfclrk/envars"))
 ```
 
 
@@ -43,10 +44,10 @@ BAZ=nosubst:FOO$BAR
 
 Now, you can run:
 
--   `M-x envars`, which will prompt you for a file. All the environment
+-   `M-x envars-set-file`, which will prompt you for a file. All the environment
     variables defined in the file will be **set**.
--   `M-x envars-unset`, which will prompt you for a file. All the environment
-    variables defined in the file will be **unset**.
+-   `M-x envars-unset-file`, which will prompt you for a file. All the
+    environment variables defined in the file will be **unset**.
 
 
 ## Usage from Elisp
@@ -54,13 +55,13 @@ Now, you can run:
 To set env variables defined in `~/.env/foo`:
 
 ```emacs-lisp
-(envars (expand-file-name "~/.env/foo"))
+(envars-set-file (expand-file-name "~/.env/foo"))
 ```
 
 Or, if you have a string instead of a file:
 
 ```emacs-lisp
-(envars-str "FOO=foo\nBAR=bar")
+(envars-set-str "FOO=foo\nBAR=bar")
 ```
 
 
@@ -93,7 +94,7 @@ shell-isms will not work. However, the env file may:
 -   Use existing environment variables
 -   Define an environment variable and use it in successive lines
 -   A `~` is expanded if it is the first character in the value
--   If a value starts with `nosubst:`, no variable substitution will be
+-   If a value starts with \`nosubst:\`, no variable substitution will be
     performed. You need this if there is a literal `$` in the value.
 
 
