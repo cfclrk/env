@@ -1,0 +1,3 @@
+FOO=foo
+BAR=$FOO-bar
+BAZ=~/cats
