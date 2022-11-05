@@ -1,82 +1,27 @@
 ;;; envars.el --- Utilities for setting env variables -*- lexical-binding: t; -*-
 
+;; Author: Chris Clark <cfclrk@gmail.com>
+;; Version: 0.1
 ;; Package-Requires: ((dash "2.17.0") (f "0.20.0") (s "1.12.0"))
-;; Package-Version: 0.0.1
+;; URL: https://github.com/cfclrk/envars
 
 ;;; Commentary:
 
-;; Set or unset environment variables from an "env" or dotenv file.
-;;
-;; This package provides two interactive functions:
-;;
-;; 1.  `envars-set-file`: Set all the environment variables defined in an env
-;;     file.
-;; 2.  `envars-unset-file`: Unset all the environment variables defined in an
-;;     env file.
-;;
-;; When used interactively, each function prompts for a file. By default, the
-;; prompt begins at `envars-dir`.
-;;
-;;
-;; # Usage
-;;
-;; Start by creating an env file in `envars-dir` (by default, `~/.env/`). For
-;; example, create this file in `~/.env/foo`:
-;;
-;;     FOO=~/foo
-;;     BAR=$FOO/bar
-;;     ОФИС=ДОМ
-;;     BAZ=nosubst:FOO$BAR
-;;
-;; Now, you can run:
-;;
-;; -   `M-x envars-set-file`, which will prompt you for a file. All the
-;;     environment variables defined in the file will be **set**.
-;; -   `M-x envars-unset-file`, which will prompt you for a file. All the
-;;     environment variables defined in the file will be **unset**.
-;;
-;;
-;; ## Usage from Elisp
-;;
-;; To set env variables defined in `~/.env/foo`:
-;;
-;;     (envars-set-file (expand-file-name "~/.env/foo"))
-;;
-;; Or, if you have a string instead of a file:
-;;
-;;     (envars-set-str "FOO=foo\nBAR=bar")
-;;
-;;
-;; ## Usage from org-mode
-;;
-;; The example below shows a convenient way to declare and set environment
-;; variables in an `org` document:
-;;
-;;     #+NAME: env
-;;     | Var  | Value           |
-;;     |------+-----------------|
-;;     | FOO  | ~/foo           |
-;;     | BAR  | $FOO/bar        |
-;;     | ОФИС | ДОМ             |
-;;     | BAZ  | nosubst:FOO$BAR |
-;;
-;;     #+begin_src emacs-lisp :var env=env
-;;       (envars-set-pairs env)
-;;     #+end_src
-;;
-;;
-;; # File Format
-;;
-;; Each line in the file should be in a `KEY=VALUE` format, with one entry per
-;; line. This package does not invoke a shell to interpret the file, so most
-;; shell-isms will not work. However, the env file may:
-;;
-;; -   Use existing environment variables
-;; -   Define an environment variable and use it in successive lines
-;; -   A `~` is expanded if it is the first character in the value
-;; -   If a value starts with \`nosubst:\`, no variable substitution will be
-;;     performed. You need this if there is a literal `$` in the value.
-;;
+;; See documentation at https://github.com/cfclrk/envars
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Code:
 
 (require 'dash)
@@ -94,27 +39,25 @@
 (defcustom envars-dir (expand-file-name "~/")
   "Directory with env files."
   :group 'envars
-  :type 'file)
+  :type 'directory)
 
 ;;; Public functions
 
 (defun envars-set-file (file-path)
   "Set or unset environment variables defined in FILE-PATH.
 
-When used interactively, prompts for the file to load. Default
-directory is `envars-dir'.
+When used interactively, prompts for the file to load. The prompt
+begins in `envars-dir'.
+
+When used from elisp, FILE-PATH can either be absolute or
+relative to `default-directory'.
 
 The env file at FILE-PATH may make use of existing environment
 variables, and tildes are expanded if they are the first
-character of the value. However, other shellisms will not work.
-
-Prefixed with one \\[universal-argument], unset the environment
-variables defined in file FILE-PATH."
+character of the value. However, other shellisms will not work."
   (interactive (list (read-file-name "ENV file: " envars-dir)))
   (let ((str (f-read-text file-path)))
-    (if current-prefix-arg
-        (envars-unset-str str)
-      (envars-set-str str))))
+    (envars-set-str str)))
 
 (defun envars-unset-file (file-path)
   "Unset the environment variables definedd in FILE-PATH.
