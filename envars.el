@@ -22,6 +22,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+;; TODO: name: environ?
+;;
+;;
+
 ;;; Code:
 
 (require 'dash)
@@ -41,7 +45,7 @@
   :group 'envars
   :type 'directory)
 
-;;; Public functions
+;;; Set and unset functions
 
 (defun envars-set-file (file-path)
   "Set or unset environment variables defined in FILE-PATH.
@@ -52,37 +56,36 @@ begins in `envars-dir'.
 When used from elisp, FILE-PATH can either be absolute or
 relative to `default-directory'.
 
-The env file at FILE-PATH may make use of existing environment
-variables, and tildes are expanded if they are the first
-character of the value. However, other shellisms will not work."
+The env file at FILE-PATH should be in the standard env file
+format."
   (interactive (list (read-file-name "ENV file: " envars-dir)))
-  (let ((str (f-read-text file-path)))
-    (envars-set-str str)))
+  (envars-set-str (f-read-text file-path)))
 
 (defun envars-unset-file (file-path)
-  "Unset the environment variables definedd in FILE-PATH.
+  "Unset the environment variables defined in FILE-PATH.
 
 See the documentation for `envars-set-file'."
   (interactive (list (read-file-name "ENV file: " envars-dir)))
-  (let ((str (f-read-text file-path)))
-    (envars-unset-str str)))
+  (envars-unset-str (f-read-text file-path)))
 
 (defun envars-set-str (str)
   "Set environment variables defined in string STR.
 
-Parse STR like an env file. See the documentation for
-`envars-set-file'."
+Parse STR like an env file. STR is split into newline-delimited
+lines, where each line is a key/value pair."
   (let* ((lines (s-lines (s-trim str)))
-         (pairs (--map (s-split "=" it) lines)))
+         (pairs (envars--lines-to-pairs lines)))
     (envars-set-pairs pairs)))
 
 (defun envars-unset-str (str)
   "Unset environment variables defined in string STR.
 
-Parse STR like an env file. See the documentation for
-`envars-set-file'."
+Parse STR like an env file. STR is split into newline-delimited
+pairs, where the key of each pair is the environment variable
+name. The value of each pair is discarded, as the environment
+variable will be unset regardless of its value."
   (let* ((lines (s-lines (s-trim str)))
-         (pairs (--map (s-split "=" it) lines)))
+         (pairs (envars--lines-to-pairs lines)))
     (envars-unset-pairs pairs)))
 
 (defun envars-set-pairs (pairs)
@@ -90,52 +93,46 @@ Parse STR like an env file. See the documentation for
 
 PAIRS is a list of pairs, where each pair is an environment
 variable name and value."
-  (-each pairs #'envars--export-pair))
+  (-> pairs
+      (envars--eval-pairs)
+      (-each #'envars--export-pair)))
 
 (defun envars-unset-pairs (pairs)
   "Remove PAIRS from `process-environment'.
 
 PAIRS is a list of pairs, where each pair is an environment
-variable name and value.
-
-The key of each pair is the environment variable name. The value
-of each pair is discarded, as the environment variable will be
-unset regardless of its value."
+variable name and value. The value in each pair doesn't matter;
+each environment variable will be unset regardless of its value."
   (envars--unset-names (-map 'car pairs)))
 
 ;;; Private functions
 
+;;; Post-eval filters
+
+(defun envars-remove-sh-vars (pairs)
+  "Remove some from PAIRS.
+
+The sh shell initializes these environment varibales. See the
+corresponding test to verify this.
+
+This is the default post-eval filter."
+  (let ((ignored-env-vars '("DISPLAY"
+                            "PWD"
+                            "SHLVL"
+                            "_")))
+    (-filter
+     (lambda (pair) (not (member (car pair) ignored-env-vars)))
+     pairs)))
+
 (defun envars--export-pair (pair)
-  "Set an environment variable PAIR.
-PAIR is a list of size 2, where first element is an environment
-variable name and the second element is the value.
-
-If the second element begins with a ~, it is treated as a file
-path and expanded.
-
-If the second element begins with 'nosubst:', the value is
-treated as a literal string, and no variable interpolation is
-performed."
-  (let* ((name (car pair))
-         (val (car (cdr pair)))
-
-         ;; If the value of the pair is an number, convert it to a string
-         (string_val (if (numberp val)
-                         (number-to-string val)
-                       val))
-
-         ;; If the value starts with ~, expand it like a path
-         (full_val (if (string-prefix-p "~" string_val)
-                       (expand-file-name string_val)
-                     string_val)))
-
-    ;; If the value starts with "nosubst:", do not do variable interpolation
-    (if (string-prefix-p "nosubst:" full_val)
-        (setenv name (s-chop-prefix "nosubst:" full_val))
-      (setenv name full_val t))))
+  "Set an environment variable PAIR."
+  (let ((name (car pair))
+        (val (car (cdr pair))))
+    (setenv name val)))
 
 (defun envars--unset-names (names)
   "Remove NAMES from `process-environment'.
+
 NAMES is a list of environment variable names which may or may
 not be currently set. This function removes each given name from
 `process-environment' if it is set."
@@ -143,24 +140,99 @@ not be currently set. This function removes each given name from
 
 (defun envars--unset-name (name)
   "Unset the environment variable NAME.
-Unset environment variable NAME by removing it from
-`process-environment' if it is there.
 
-Note: calling `setenv' with a prefix argument sets the variable's
+Unset the given environment variable by removing it from
+`process-environment' if it is there. Note that calling `setenv'
+with a prefix argument can 'unset' a variable by setting its
 value to nil, but the variable remains in `process-environment'.
 This function completely removes the variable from
-`process-environment'."
-  (let* ((name (if (multibyte-string-p name)
-                   (encode-coding-string name locale-coding-system t)
-                 name))
-         (index (-elem-index name (envars--get-names))))
+`process-environment'.
+
+Neither Emacs nor bash directly support non-ASCII characters as
+environment variables[1], but Emacs can fake it by using escaped
+sequences of unicode code points.
+
+[1]: https://pubs.opengroup.org/onlinepubs/9699919799/"
+  (let* ((encoded-name (if (multibyte-string-p name)
+                           (encode-coding-string name locale-coding-system t)
+                         name))
+         (index (-elem-index encoded-name (envars--get-names))))
     (if index
-        (setq process-environment (-remove-at index process-environment))
+        (setq process-environment
+              (-remove-at index process-environment))
       process-environment)))
 
 (defun envars--get-names ()
   "Return names of all current environment variables."
   (--map (car (s-split "=" it)) process-environment))
+
+;;;; Conversion functions
+
+(defun envars--pairs-to-script (pairs)
+  "Turn PAIRS into a sh script."
+  (->> pairs
+       (--map (s-join "=" it))
+       (envars--lines-to-script)))
+
+(defun envars--lines-to-script (lines)
+  "Turn LINES into a sh script."
+  (->> lines
+      (--map (s-prepend "export " it))
+      (s-join "\n")))
+
+(defun envars--lines-to-pairs (lines)
+  "Return a list of pairs of LINES."
+  (--map (s-split "=" it) lines))
+
+;;;; Eval functions
+
+(defun envars--eval-pairs (pairs)
+  "Eval PAIRS.
+
+- Capture the current process environment
+- Run pre-eval hooks
+- Evaluate given pairs in a subshell
+- Run post-eval hooks
+
+The result is diffed against the captured process environment.
+
+Returns the list of pairs of environment variables that should be
+set in the new environment."
+  (let* (;; Capture the current environment
+         (old-pairs (envars--lines-to-pairs process-environment))
+
+         ;; Run the pre-eval hooks
+         ;; TODO
+
+         ;; Evaluate given pairs in a subshell
+         (stdout (envars--eval-script
+                  (envars--pairs-to-script pairs)))
+
+         ;; Convert the result into pairs
+         (out-pairs (-> stdout
+                        s-trim
+                        s-lines
+                        envars--lines-to-pairs))
+
+         ;; Run the post-eval hooks
+         ;; TODO
+         (new-pairs (envars-remove-sh-vars out-pairs)))
+
+    ;; And return the difference!
+    (-difference new-pairs old-pairs)))
+
+(defun envars--eval-script (script)
+  "Start a subprocess, execute SCRIPT, and return the resulting env.
+
+SCRIPT can be any sh script. This function appends the 'env'
+command to the end of the script, and then returns stdout."
+  (with-temp-buffer
+    (let* ((env-script (s-append "\nenv" script))
+           (ret-code (call-process "sh"
+                                   nil t nil
+                                   shell-command-switch
+                                   env-script)))
+      (buffer-string))))
 
 (provide 'envars)
 ;;; envars.el ends here

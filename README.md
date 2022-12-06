@@ -77,15 +77,44 @@ variables in an `org` document:
 
 # File Format
 
-Each line in the file should be in a `KEY=VALUE` format, with one entry per
-line. This package does not invoke a shell to interpret the file, so most
-shell-isms will not work. However, the env file may:
+Each line in the file must be in a `KEY=VALUE` format, with one entry per line.
+This package invokes an `sh` shell to interpret the file, so shell-isms
+technically should work. However, for compatability with other tools, it's best
+to stick to the following minimal set of features:
 
 - Use existing environment variables
 - Define an environment variable and use it in successive lines
 - A `~` is expanded if it is the first character in the value
-- If a value starts with \`nosubst:\`, no variable substitution will be
-  performed. You need this if there is a literal `$` in the value.
+
+# How it Works
+
+The first thing this package does is convert input into a list of key/value
+pairs (call it the "internal representation" or IR).
+
+1. Parse input into an IR (a list of key/value pairs)
+2. Run pre-eval hooks on the IR
+3. Assemble into a shell script, evaluate, and parse result back into IR
+4. Run post-eval hooks on the IR
+5. Set (or return) the resulting list of key/value pairs as environment variables
+
+The way in:
+
+```mermaid
+flowchart LR
+    input -- parse --> IR
+    IR -- pre-eval-hooks --> IR
+    IR -- assemble --> shell-script
+    shell-script -- evaluate --> output
+```
+
+The way out:
+
+```mermaid
+flowchart LR
+  output -- parse --> IR
+  IR -- post-eval-hooks --> IR
+  IR -- export--> done
+```
 
 # Development
 
