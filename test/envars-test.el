@@ -14,44 +14,48 @@
 ;; ignored by the default filter.
 
 (ert-deftest envars-set-file ()
-  "Test running `envars-set-file'."
-  (let ((process-environment '())
-        (test-file (proj-file "test/examples/variables")))
+  "Test running `envars-set-file'.
 
-    ;; Sets FOO, BAR, and BAZ
+This should set all environment variables defined in the file."
+  (let ((process-environment '())
+        (test-file (proj-file "test/examples/simple")))
+
     (envars-set-file test-file)
 
     (should (equal "foo"
-                   (getenv "FOO")))
+                   (getenv "A")))
+    (should (equal "bar"
+                   (getenv "B")))
+    (should (equal "R$%!$KP$"
+                   (getenv "C")))
     (should (equal "foo-bar"
-                   (getenv "BAR")))
+                   (getenv "D")))
     (should (equal (expand-file-name "~/cats")
-                   (getenv "BAZ")))))
+                   (getenv "E")))))
 
 (ert-deftest envars-unset-file ()
   "Test running `envars-unset-file'.
 
 This should unset the env vars defined in the file."
-  (let ((process-environment '("FOO=foo" "BAR=bar" "CATS=cats"))
+  (let ((process-environment '("A=a" "B=b" "C=C" "Z=z"))
         (test-file (proj-file "test/examples/simple")))
 
     ;; Unsets FOO, BAR, and BAZ
     (envars-unset-file test-file)
 
-    (should (equal '("CATS=cats")
-                   process-environment))))
+    (should
+     (equal '("Z=z")
+            process-environment))))
 
 (ert-deftest envars-set-str ()
   "Test running `envars-set-str'."
   (let ((process-environment '())
-        (test-str "FOO=foo\nBAR=bar"))
+        (test-str "A=a\nB=b"))
 
     (envars-set-str test-str)
 
-    (should (equal "foo"
-                   (getenv "FOO")))
-    (should (equal "bar"
-                   (getenv "BAR")))))
+    (should (equal "a" (getenv "A")))
+    (should (equal "b" (getenv "B")))))
 
 (ert-deftest envars-unset-str ()
   "Test running `envars-set-str'."
@@ -67,15 +71,6 @@ This should unset the env vars defined in the file."
 (ert-deftest envars-set-pairs ()
   "Test running `envars-set-pairs' to set env vars."
   (with-process-environment '()
-    (envars-set-pairs '(("A" "a")
-                        ("B" "'R$%!$KP$'")))
-    (should
-     (-same-items? '("B=R$%!$KP$" "A=a")
-                   process-environment))))
-
-(ert-deftest envars-set-pairs ()
-  "Test running `envars-set-pairs' to set env vars."
-  (let ((process-environment '()))
     (envars-set-pairs '(("A" "a")
                         ("B" "'R$%!$KP$'")))
     (should

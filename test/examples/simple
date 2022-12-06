@@ -1,2 +1,5 @@
-FOO=foo
-BAR=bar
+A=foo
+B="bar"
+C='R$%!$KP$'
+D=$A-bar
+E=~/cats
