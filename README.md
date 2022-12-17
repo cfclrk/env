@@ -23,7 +23,7 @@ Example using straight:
           :repo "cfclrk/envars"))
 ```
 
-## Usage
+## Using env files
 
 Create a file in `envars-dir` (which is by default `~/.env/`). For example,
 create this file in `~/.env/foo`:
@@ -42,7 +42,7 @@ Now, you can run:
 - `M-x envars-unset-file`, which will prompt you for a file. All the
   environment variables defined in the file will be **unset**.
 
-### Usage from Elisp
+## Using the API
 
 To set env variables defined in `~/.env/foo`:
 
@@ -59,7 +59,7 @@ Or, if you have a string instead of a file:
 ## Usage from org-mode
 
 The example below shows a convenient way to declare and set environment
-variables in an `org` document:
+variables in an `org` document using a table:
 
 ```org
 #+NAME: env
@@ -67,15 +67,14 @@ variables in an `org` document:
 |------+-----------------|
 | FOO  | ~/foo           |
 | BAR  | $FOO/bar        |
-| ОФИС | ДОМ             |
-| BAZ  | nosubst:FOO$BAR |
+| BAZ  | '$FOO/bar'      |
 
 #+begin_src emacs-lisp :var env=env
   (envars-set-pairs env)
 #+end_src
 ```
 
-# File Format
+## File Format
 
 Each line in the file must be in a `KEY=VALUE` format, with one entry per line.
 This package invokes an `sh` shell to interpret the file, so shell-isms
@@ -86,7 +85,7 @@ to stick to the following minimal set of features:
 - Define an environment variable and use it in successive lines
 - A `~` is expanded if it is the first character in the value
 
-# How it Works
+## How it Works
 
 The first thing this package does is convert input into a list of key/value
 pairs (call it the "internal representation" or IR).
@@ -116,12 +115,12 @@ flowchart LR
   IR -- export--> done
 ```
 
-# Development
+## Development
 
 1. `make dep`: Install dependencies
 2. `make test`: Run unit tests (you must run `make dep` first!)
 
-# See Also
+## See Also
 
 - [emacs-direnv](https://github.com/wbolster/emacs-direnv)
 - [envrc](https://github.com/purcell/envrc)

@@ -5,10 +5,6 @@
 ;; Package-Requires: ((dash "2.17.0") (f "0.20.0") (s "1.12.0"))
 ;; URL: https://github.com/cfclrk/envars
 
-;;; Commentary:
-
-;; See documentation at https://github.com/cfclrk/envars
-
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -22,9 +18,11 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+;;; Commentary:
+
+;; See documentation at https://github.com/cfclrk/envars
+
 ;; TODO: name: environ?
-;;
-;;
 
 ;;; Code:
 
@@ -44,6 +42,16 @@
   "Directory with env files."
   :group 'envars
   :type 'directory)
+
+(defcustom envars-pre-eval-hook nil
+  "List of functions to run before subshell evaluation."
+  :group 'envars
+  :type 'hook)
+
+(defcustom envars-post-eval-hook nil
+  "List of functions to run after subshell evaluation."
+  :group 'envars
+  :type 'hook)
 
 ;;; Set and unset functions
 
