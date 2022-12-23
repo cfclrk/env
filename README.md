@@ -1,16 +1,10 @@
 # envars
 
-An Emacs package that provides an API to set and unset environment variables
-from files, strings, and pairs.
+An Emacs package that provides an API for setting and unsetting environment
+variables from files, strings, and pairs.
 
-This package also provides two interactive functions:
-
-1. `envars-set-file`: Set all the environment variables defined in an env file
-2. `envars-unset-file`: Unset all the environment variables defined in an env
-    file
-
-When used interactively, those functions prompt for a file. By default, the
-prompt begins at `envars-dir`.
+This package uses an `sh` subshell to evaluate environment variables. So, you
+may define environment variables using shellisms.
 
 ## Installation
 
@@ -23,38 +17,52 @@ Example using straight:
           :repo "cfclrk/envars"))
 ```
 
-## Using env files
+## API
 
-Create a file in `envars-dir` (which is by default `~/.env/`). For example,
-create this file in `~/.env/foo`:
+### `envars-set-file` (interactive)
 
-```sh
-FOO=~/foo
-BAR=$FOO/bar
-ОФИС=ДОМ
-BAZ=nosubst:FOO$BAR
-```
+  Set all the environment variables defined in an env file. When used
+  interactively, prompts for a file. By default, the prompt begins at
+  `envars-dir`.
 
-Now, you can run:
+  ```emacs-lisp
+  (envars-set-file
+   (expand-file-name "~/.env/foo"))
+  ```
 
-- `M-x envars-set-file`, which will prompt you for a file. All the environment
-  variables defined in the file will be **set**.
-- `M-x envars-unset-file`, which will prompt you for a file. All the
-  environment variables defined in the file will be **unset**.
+### `envars-unset-file` (interactive)
 
-## Using the API
+  Unset all the environment variables defined in an env file. When used
+  interactively, prompts for a file. By default, the prompt begins at
+  `envars-dir`.
 
-To set env variables defined in `~/.env/foo`:
+  ```emacs-lisp
+  (envars-unset-file
+   (expand-file-name "~/.env/foo"))
+  ```
 
-```emacs-lisp
-(envars-set-file (expand-file-name "~/.env/foo"))
-```
-
-Or, if you have a string instead of a file:
+### `envars-set-str`
 
 ```emacs-lisp
 (envars-set-str "FOO=foo\nBAR=bar")
 ```
+
+### `envars-unset-str`
+
+### `envars-set-pairs`
+
+### `envars-unset-pairs`
+
+## File Format
+
+Each line in an env file must be in a `KEY=VALUE` format, with one entry per
+line. This package invokes an `sh` shell to interpret the file, so shell-isms
+technically should work. However, for compatability with other tools, it's best
+to stick to the following minimal set of features:
+
+- Use existing environment variables
+- Define an environment variable and use it in successive lines
+- A `~` is expanded if it is the first character in the value
 
 ## Usage from org-mode
 
@@ -74,17 +82,6 @@ variables in an `org` document using a table:
 #+end_src
 ```
 
-## File Format
-
-Each line in the file must be in a `KEY=VALUE` format, with one entry per line.
-This package invokes an `sh` shell to interpret the file, so shell-isms
-technically should work. However, for compatability with other tools, it's best
-to stick to the following minimal set of features:
-
-- Use existing environment variables
-- Define an environment variable and use it in successive lines
-- A `~` is expanded if it is the first character in the value
-
 ## How it Works
 
 The first thing this package does is convert input into a list of key/value
@@ -103,7 +100,7 @@ flowchart LR
     input -- parse --> IR
     IR -- pre-eval-hooks --> IR
     IR -- assemble --> shell-script
-    shell-script -- evaluate --> output
+    shell-script -- invoke-shell --> output
 ```
 
 The way out:
