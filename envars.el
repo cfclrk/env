@@ -56,13 +56,11 @@
 ;;; Set and unset functions
 
 (defun envars-set-file (file-path)
-  "Set or unset environment variables defined in FILE-PATH.
+  "Set environment variables defined in the file at FILE-PATH.
 
 When used interactively, prompts for the file to load. The prompt
-begins in `envars-dir'.
-
-When used from elisp, FILE-PATH can either be absolute or
-relative to `default-directory'.
+begins in `envars-dir'. When used from elisp, FILE-PATH can
+either be absolute or relative to `default-directory'.
 
 The env file at FILE-PATH should be in the standard env file
 format."
@@ -77,7 +75,7 @@ See the documentation for `envars-set-file'."
   (envars-unset-str (f-read-text file-path)))
 
 (defun envars-set-str (str)
-  "Set environment variables defined in string STR.
+  "Set environment variables defined in the given string STR.
 
 Parse STR like an env file. STR is split into newline-delimited
 lines, where each line is a key/value pair."
@@ -97,7 +95,7 @@ variable will be unset regardless of its value."
     (envars-unset-pairs pairs)))
 
 (defun envars-set-pairs (pairs)
-  "Add PAIRS to `process-environment'.
+  "Set the environment variables defined in the given PAIRS.
 
 PAIRS is a list of pairs, where each pair is an environment
 variable name and value."
@@ -106,45 +104,30 @@ variable name and value."
       (-each #'envars--export-pair)))
 
 (defun envars-unset-pairs (pairs)
-  "Remove PAIRS from `process-environment'.
+  "Unset the environment variables defined in the given PAIRS.
 
 PAIRS is a list of pairs, where each pair is an environment
 variable name and value. The value in each pair doesn't matter;
 each environment variable will be unset regardless of its value."
-  (envars--unset-names (-map 'car pairs)))
+  (envars-unset-names (-map 'car pairs)))
+
+(defun envars-unset-names (names)
+  "Unset environment variables with the given NAMES.
+
+NAMES is a list of environment variable names which may or may
+not be currently set. This function removes each given name from
+`process-environment' if it is set."
+  (-each names #'envars--unset-name))
 
 ;;; Private functions
 
 ;;; Post-eval filters
-
-(defun envars-remove-sh-vars (pairs)
-  "Remove some from PAIRS.
-
-The sh shell initializes these environment varibales. See the
-corresponding test to verify this.
-
-This is the default post-eval filter."
-  (let ((ignored-env-vars '("DISPLAY"
-                            "PWD"
-                            "SHLVL"
-                            "_")))
-    (-filter
-     (lambda (pair) (not (member (car pair) ignored-env-vars)))
-     pairs)))
 
 (defun envars--export-pair (pair)
   "Set an environment variable PAIR."
   (let ((name (car pair))
         (val (car (cdr pair))))
     (setenv name val)))
-
-(defun envars--unset-names (names)
-  "Remove NAMES from `process-environment'.
-
-NAMES is a list of environment variable names which may or may
-not be currently set. This function removes each given name from
-`process-environment' if it is set."
-  (-each names #'envars--unset-name))
 
 (defun envars--unset-name (name)
   "Unset the environment variable NAME.
@@ -209,8 +192,7 @@ set in the new environment."
   (let* (;; Capture the current environment
          (old-pairs (envars--lines-to-pairs process-environment))
 
-         ;; Run the pre-eval hooks
-         ;; TODO
+         ;; TODO: Run the pre-eval hooks
 
          ;; Evaluate given pairs in a subshell
          (stdout (envars--eval-script
@@ -222,8 +204,8 @@ set in the new environment."
                         s-lines
                         envars--lines-to-pairs))
 
-         ;; Run the post-eval hooks
-         ;; TODO
+         ;; TODO: Run the post-eval hooks. Right now this is just the
+         ;; remove-sh-vars function.
          (new-pairs (envars-remove-sh-vars out-pairs)))
 
     ;; And return the difference!
@@ -241,6 +223,20 @@ command to the end of the script, and then returns stdout."
                                    shell-command-switch
                                    env-script)))
       (buffer-string))))
+
+(defun envars-remove-sh-vars (pairs)
+  "Remove some from PAIRS.
+
+The sh shell initializes these environment varibales.
+
+This is the default post-eval filter."
+  (let ((ignored-env-vars '("DISPLAY"
+                            "PWD"
+                            "SHLVL"
+                            "_")))
+    (-filter
+     (lambda (pair) (not (member (car pair) ignored-env-vars)))
+     pairs)))
 
 (provide 'envars)
 ;;; envars.el ends here

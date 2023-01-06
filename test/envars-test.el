@@ -64,28 +64,28 @@ This should unset the env vars defined in the file."
 
     (envars-unset-str test-str)
 
-    (should
-     (-same-items? '("CATS=cats")
-                   process-environment))))
+    (should (-same-items? '("CATS=cats")
+                          process-environment))))
 
 (ert-deftest envars-set-pairs ()
   "Test running `envars-set-pairs' to set env vars."
   (with-process-environment '()
+
     (envars-set-pairs '(("A" "a")
                         ("B" "'R$%!$KP$'")))
-    (should
-     (-same-items? '("B=R$%!$KP$" "A=a")
-                   process-environment))))
+
+    (should (-same-items? '("B=R$%!$KP$" "A=a")
+                          process-environment))))
 
 (ert-deftest envars-unset-pairs ()
   "Test running `envars-unset-pairs' to unset env vars."
   (let ((process-environment '("FOO=foo" "BAR=bar" "BAZ=baz")))
 
-    (envars-unset-pairs '(("FOO" "foo") ("BAR" "barrr")))
+    (envars-unset-pairs '(("FOO" "foo")
+                          ("BAR" "barrr")))
 
-    (should
-     (-same-items? '("BAZ=baz")
-                   process-environment))))
+    (should (-same-items? '("BAZ=baz")
+                          process-environment))))
 
 ;; (ert-deftest envars--unset-names/simple ()
 ;;   "Test running `envars-unset-names' to unset env vars."

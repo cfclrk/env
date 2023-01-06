@@ -19,39 +19,91 @@ Example using straight:
 
 ## API
 
-### `envars-set-file` (interactive)
+### envars-set-file `(file-path)`
 
-  Set all the environment variables defined in an env file. When used
-  interactively, prompts for a file. By default, the prompt begins at
-  `envars-dir`.
+**[interactive]** Set environment variables defined in the file at FILE-PATH.
 
-  ```emacs-lisp
-  (envars-set-file
-   (expand-file-name "~/.env/foo"))
-  ```
+When used interactively, prompts for the file to load. The prompt begins in
+`envars-dir`. When used from elisp, FILE-PATH can either be absolute or relative
+to `default-directory`.
 
-### `envars-unset-file` (interactive)
+The env file at FILE-PATH should be in the standard env file format.
 
-  Unset all the environment variables defined in an env file. When used
-  interactively, prompts for a file. By default, the prompt begins at
-  `envars-dir`.
+```emacs-lisp
+(envars-set-file
+ (expand-file-name "~/.env/foo"))
+```
 
-  ```emacs-lisp
-  (envars-unset-file
-   (expand-file-name "~/.env/foo"))
-  ```
+### envars-unset-file `(file-path)`
 
-### `envars-set-str`
+**[interactive]** Unset the environment variables defined in FILE-PATH.
+
+See the documentation for `envars-set-file`.
+
+```emacs-lisp
+(envars-unset-file
+ (expand-file-name "~/.env/foo"))
+```
+
+### envars-set-str `(str)`
+
+Set environment variables defined in the given string STR.
+
+Parse STR like an env file. STR is split into newline-delimited lines, where
+each line is a key/value pair.
 
 ```emacs-lisp
 (envars-set-str "FOO=foo\nBAR=bar")
 ```
 
-### `envars-unset-str`
+### envars-unset-str `(str)`
 
-### `envars-set-pairs`
+Unset environment variables defined in string STR.
 
-### `envars-unset-pairs`
+Parse STR like an env file. STR is split into newline-delimited pairs, where the
+key of each pair is the environment variable name. The value of each pair is
+discarded, as the environment variable will be unset regardless of its value.
+
+```emacs-lisp
+(envars-set-str "FOO=foo\nBAR=bar")
+```
+
+### envars-set-pairs `(pairs)`
+
+Set the environment variables defined in the given PAIRS.
+
+PAIRS is a list of pairs, where each pair is an environment variable name and
+value.
+
+```emacs-lisp
+(envars-set-pairs '(("A" "a")
+                    ("B" "'R$%!$KP$'")))
+```
+
+### envars-unset-pairs `(pairs)`
+
+Unset the environment variables defined in the given PAIRS.
+
+PAIRS is a list of pairs, where each pair is an environment variable name and
+value. The value in each pair doesn't matter; each environment variable will be
+unset regardless of its value.
+
+```emacs-lisp
+(envars-unset-pairs '(("FOO" "foo")
+                      ("BAR" "bar")))
+```
+
+### envars-unset-names `(names)`
+
+Unset environment variables with the given NAMES.
+
+NAMES is a list of environment variable names which may or may not be currently
+set. This function removes each given name from `process-environment` if it is
+set.
+
+```emacs-lisp
+(envars-unset-names '("FOO" "BAR"))
+```
 
 ## File Format
 
@@ -84,14 +136,7 @@ variables in an `org` document using a table:
 
 ## How it Works
 
-The first thing this package does is convert input into a list of key/value
-pairs (call it the "internal representation" or IR).
-
-1. Parse input into an IR (a list of key/value pairs)
-2. Run pre-eval hooks on the IR
-3. Assemble into a shell script, evaluate, and parse result back into IR
-4. Run post-eval hooks on the IR
-5. Set (or return) the resulting list of key/value pairs as environment variables
+When any of the public functions are called, the input is parsed into a list of pairs (the IR), assembled into a shell script, and then the shell script is run in an `sh` shell and the output is captured.
 
 The way in:
 
@@ -109,7 +154,7 @@ The way out:
 flowchart LR
   output -- parse --> IR
   IR -- post-eval-hooks --> IR
-  IR -- export--> done
+  IR -- export --> done
 ```
 
 ## Development
