@@ -65,7 +65,7 @@ key of each pair is the environment variable name. The value of each pair is
 discarded, as the environment variable will be unset regardless of its value.
 
 ```emacs-lisp
-(env-set-str "FOO=foo\nBAR=bar")
+(env-unset-str "FOO=foo\nBAR=bar")
 ```
 
 ### env-set-pairs `(pairs)`
@@ -76,8 +76,12 @@ PAIRS is a list of pairs, where each pair is an environment variable name and
 value.
 
 ```emacs-lisp
+(env-set-pairs '(("FOO" "foo")
+                 ("BAR" "$FOO-bar")))
+
+;; Prevent interpolation using single quotes
 (env-set-pairs '(("A" "a")
-                    ("B" "'R$%!$KP$'")))
+                 ("B" "'$FOO-bar'")))
 ```
 
 ### env-unset-pairs `(pairs)`
@@ -90,7 +94,7 @@ unset regardless of its value.
 
 ```emacs-lisp
 (env-unset-pairs '(("FOO" "foo")
-                      ("BAR" "bar")))
+                   ("BAR" "bar")))
 ```
 
 ### env-unset-names `(names)`
@@ -98,8 +102,7 @@ unset regardless of its value.
 Unset environment variables with the given NAMES.
 
 NAMES is a list of environment variable names which may or may not be currently
-set. This function removes each given name from `process-environment` if it is
-set.
+set. This function removes each name from `process-environment` if it is set.
 
 ```emacs-lisp
 (env-unset-names '("FOO" "BAR"))
@@ -108,13 +111,19 @@ set.
 ## File Format
 
 Each line in an env file must be in a `KEY=VALUE` format, with one entry per
-line. This package invokes an `sh` shell to interpret the file, so shell-isms
-technically should work. However, for compatability with other tools, it's best
-to stick to the following minimal set of features:
+line. This package invokes an `sh` shell to interpret the file, so shellisms
+should work (like `~` expansion or using single quotes to prevent variable
+interpolation).
 
-- Use existing environment variables
-- Define an environment variable and use it in successive lines
-- A `~` is expanded if it is the first character in the value
+For example:
+
+```text
+A=foo
+B="bar"
+C='R$%!$KP$'
+D=$A-bar
+E=~/cats
+```
 
 ## Usage from org-mode
 
@@ -156,11 +165,6 @@ flowchart LR
   IR -- post-eval-hooks --> IR
   IR -- export --> done
 ```
-
-## Development
-
-1. `make dep`: Install dependencies
-2. `make test`: Run unit tests (you must run `make dep` first!)
 
 ## See Also
 

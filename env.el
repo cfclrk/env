@@ -113,7 +113,7 @@ each environment variable will be unset regardless of its value."
   "Unset environment variables with the given NAMES.
 
 NAMES is a list of environment variable names which may or may
-not be currently set. This function removes each given name from
+not be currently set. This function removes each name from
 `process-environment' if it is set."
   (-each names #'env--unset-name))
 
