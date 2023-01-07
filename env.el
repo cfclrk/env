@@ -99,7 +99,7 @@ PAIRS is a list of pairs, where each pair is an environment
 variable name and value."
   (-> pairs
       (env--eval-pairs)
-      (-each #'env--export-pair)))
+      (-each #'env--set-pair)))
 
 (defun env-unset-pairs (pairs)
   "Unset the environment variables defined in the given PAIRS.
@@ -117,11 +117,11 @@ not be currently set. This function removes each given name from
 `process-environment' if it is set."
   (-each names #'env--unset-name))
 
-;;; Private functions
-
 ;;; Post-eval filters
 
-(defun env--export-pair (pair)
+;;; Private functions
+
+(defun env--set-pair (pair)
   "Set an environment variable PAIR."
   (let ((name (car pair))
         (val (car (cdr pair))))

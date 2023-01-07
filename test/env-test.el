@@ -98,52 +98,54 @@ REL-PATH is a path relative to this project root."
     (should (equal nil (getenv "FOO")))
     (should (equal nil (getenv "BAR")))
     (should (equal "baz" (getenv "BAZ")))
+    (should (equal '("BAZ=baz") process-environment))
+
+    ;; Unset names that do not exist
+    (env-unset-names '("CATS" "HATS"))
+
     (should (equal '("BAZ=baz") process-environment))))
 
-;; (ert-deftest env--unset-names/non-existent-name ()
-;;   "Test running `env--unset-names' to unset non-existent env var.
-;; This shouldn't cause a problem. The environment should remain
-;; unchanged."
-;;   (with-process-environment '("FOO=foo")
-;;     (env--unset-names '(("BAR" "bar")))
-;;     (should (equal nil (getenv "BAR")))
-;;     (should (equal '("FOO=foo") process-environment))))
+(ert-deftest env--set-pair ()
+  "Test running `env--export-pair' to set a single environment variable."
+  (let ((process-environment '()))
+    (env--set-pair '("FOO" "foo"))
+    (should (equal "foo" (getenv "FOO")))
 
-;; (ert-deftest env--export-pair ()
-;;   "Test running `env--export-pair' to set a single environment variable."
-;;   (with-process-environment '()
-;;     (env--export-pair '("FOO" "foo"))
-;;     (should (equal "foo" (getenv "FOO")))
+    (env--set-pair '("FOO" "1"))
+    (should (equal "1" (getenv "FOO")))))
 
-;;     (env--export-pair '("FOO" 1))
-;;     (should (equal "1" (getenv "FOO")))))
-
-;; (ert-deftest env--unset-name/simple ()
-;;   "Test running `env--unset-name' to unset a single,
-;; simple environment variable."
-;;   (with-process-environment '("CATS=cats")
-;;     (should (equal "cats" (getenv "CATS")))
-;;     (env--unset-name "CATS")
-;;     (should (equal nil (getenv "CATS")))))
+(ert-deftest env--unset-name ()
+  (let ((process-environment '("\360\237\220\225=\360\237\220\210")))
+    (should (equal "🐈" (getenv "🐕")))
+    (env--unset-name "🐕")
+    (should (equal nil (getenv "🐈")))))
 
 (ert-deftest env--eval-pairs ()
   "Test running `env--eval-pairs'."
-  (should (equal '(("FOO" "foo")
-                   ("BAR" "bar"))
-                 (env--eval-pairs '(("FOO" "foo")
-                                    ("BAR" "bar")))))
+
+  ;; Should be able to set simple values
+  (let* ((process-environment '())
+         (evald-pairs (env--eval-pairs '(("FOO" "foo")
+                                        ("BAR" "bar")))))
+    (should (equal '(("FOO" "foo")
+                    ("BAR" "bar"))
+                   evald-pairs)))
 
   ;; Should be able to interpolate values
-  (should (equal '(("FOO" "foo")
-                   ("BAR" "foo-bar"))
-                 (env--eval-pairs '(("FOO" "foo")
-                                    ("BAR" "$FOO-bar")))))
+  (let* ((process-environment '())
+         (evald-pairs (env--eval-pairs '(("FOO" "foo")
+                                        ("BAR" "$FOO-bar")))))
+    (should (equal '(("FOO" "foo")
+                    ("BAR" "foo-bar"))
+                   evald-pairs)))
 
   ;; Should be able to surround a value in single quotes to make it a literal
-  ;; value
-  (should (-same-items? '(("FOO" "f$oo")
-                          ("B" "R$%!$KP$"))
-                        (env--eval-pairs '(("FOO" "'f$oo'")
-                                           ("B" "'R$%!$KP$'"))))))
+  ;; value (i.e. prevent interpolation)
+  (let* ((process-environment '())
+         (evald-pairs (env--eval-pairs '(("FOO" "'f$oo'")
+                                         ("B" "'R$%!$KP$'")))))
+    (should (-same-items? '(("FOO" "f$oo")
+                            ("B" "R$%!$KP$"))
+                          evald-pairs))))
 
 ;;; env-test.el ends here
