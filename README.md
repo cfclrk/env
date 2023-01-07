@@ -1,4 +1,4 @@
-# envars
+# env
 
 An Emacs package that provides an API for setting and unsetting environment
 variables from files, strings, and pairs.
@@ -12,40 +12,40 @@ Example using straight:
 
 ```emacs-lisp
 (straight-use-package
- '(envars :type git
+ '(env :type git
           :host github
-          :repo "cfclrk/envars"))
+          :repo "cfclrk/env"))
 ```
 
 ## API
 
-### envars-set-file `(file-path)`
+### env-set-file `(file-path)`
 
 **[interactive]** Set environment variables defined in the file at FILE-PATH.
 
 When used interactively, prompts for the file to load. The prompt begins in
-`envars-dir`. When used from elisp, FILE-PATH can either be absolute or relative
+`env-dir`. When used from elisp, FILE-PATH can either be absolute or relative
 to `default-directory`.
 
 The env file at FILE-PATH should be in the standard env file format.
 
 ```emacs-lisp
-(envars-set-file
+(env-set-file
  (expand-file-name "~/.env/foo"))
 ```
 
-### envars-unset-file `(file-path)`
+### env-unset-file `(file-path)`
 
 **[interactive]** Unset the environment variables defined in FILE-PATH.
 
-See the documentation for `envars-set-file`.
+See the documentation for `env-set-file`.
 
 ```emacs-lisp
-(envars-unset-file
+(env-unset-file
  (expand-file-name "~/.env/foo"))
 ```
 
-### envars-set-str `(str)`
+### env-set-str `(str)`
 
 Set environment variables defined in the given string STR.
 
@@ -53,10 +53,10 @@ Parse STR like an env file. STR is split into newline-delimited lines, where
 each line is a key/value pair.
 
 ```emacs-lisp
-(envars-set-str "FOO=foo\nBAR=bar")
+(env-set-str "FOO=foo\nBAR=bar")
 ```
 
-### envars-unset-str `(str)`
+### env-unset-str `(str)`
 
 Unset environment variables defined in string STR.
 
@@ -65,10 +65,10 @@ key of each pair is the environment variable name. The value of each pair is
 discarded, as the environment variable will be unset regardless of its value.
 
 ```emacs-lisp
-(envars-set-str "FOO=foo\nBAR=bar")
+(env-set-str "FOO=foo\nBAR=bar")
 ```
 
-### envars-set-pairs `(pairs)`
+### env-set-pairs `(pairs)`
 
 Set the environment variables defined in the given PAIRS.
 
@@ -76,11 +76,11 @@ PAIRS is a list of pairs, where each pair is an environment variable name and
 value.
 
 ```emacs-lisp
-(envars-set-pairs '(("A" "a")
+(env-set-pairs '(("A" "a")
                     ("B" "'R$%!$KP$'")))
 ```
 
-### envars-unset-pairs `(pairs)`
+### env-unset-pairs `(pairs)`
 
 Unset the environment variables defined in the given PAIRS.
 
@@ -89,11 +89,11 @@ value. The value in each pair doesn't matter; each environment variable will be
 unset regardless of its value.
 
 ```emacs-lisp
-(envars-unset-pairs '(("FOO" "foo")
+(env-unset-pairs '(("FOO" "foo")
                       ("BAR" "bar")))
 ```
 
-### envars-unset-names `(names)`
+### env-unset-names `(names)`
 
 Unset environment variables with the given NAMES.
 
@@ -102,7 +102,7 @@ set. This function removes each given name from `process-environment` if it is
 set.
 
 ```emacs-lisp
-(envars-unset-names '("FOO" "BAR"))
+(env-unset-names '("FOO" "BAR"))
 ```
 
 ## File Format
@@ -130,7 +130,7 @@ variables in an `org` document using a table:
 | BAZ  | '$FOO/bar'      |
 
 #+begin_src emacs-lisp :var env=env
-  (envars-set-pairs env)
+  (env-set-pairs env)
 #+end_src
 ```
 

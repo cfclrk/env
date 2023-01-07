@@ -6,7 +6,6 @@
 
 ;;; Code:
 
-(require 'cask)
 (require 'dash)
 (require 'f)
 (require 'projectile)
@@ -30,14 +29,5 @@ After evaluating FORMS, the original `process-environment' is restored."
           (setq process-environment ,temp-environment)
           ,@forms)
       (setq process-environment orig-process-environment))))
-
-;;; Require all Elisp files in this package
-
-(let* ((cask-bundle (cask-setup (projectile-project-root)))
-       (proj-files (cask-files cask-bundle))
-       (el-files (--filter (f-ext? it "el") proj-files))
-       (abs-el-files (-map 'proj-file el-files)))
-  (--each abs-el-files
-    (require (intern (f-base it)) it)))
 
 ;;; test-helper.el ends here
