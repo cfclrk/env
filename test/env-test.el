@@ -4,19 +4,25 @@
 
 ;; Tests for package env.
 
-;; Note: the `with-process-environment' macro is defined in test-helper.el.
-
 ;;; Code:
 
-(require env)
+(require 'dash)
+(require 'env)
+(require 'f)
+(require 'projectile)
+
+;;; Test helper functions
+
+(defun proj-file (rel-path)
+  "Return the absolute path to REL-PATH.
+REL-PATH is a path relative to this project root."
+  (f-join (projectile-project-root) rel-path))
 
 ;; TODO: Add this test to show that every env var that the sh shell adds is
 ;; ignored by the default filter.
 
 (ert-deftest env-set-file ()
-  "Test running `env-set-file'.
-
-This should set all environment variables defined in the file."
+  "Test running `env-set-file'."
   (let ((process-environment '())
         (test-file (proj-file "test/examples/simple")))
 
@@ -34,18 +40,14 @@ This should set all environment variables defined in the file."
                    (getenv "E")))))
 
 (ert-deftest env-unset-file ()
-  "Test running `env-unset-file'.
-
-This should unset the env vars defined in the file."
+  "Test running `env-unset-file'."
   (let ((process-environment '("A=a" "B=b" "C=C" "Z=z"))
         (test-file (proj-file "test/examples/simple")))
 
-    ;; Unsets FOO, BAR, and BAZ
     (env-unset-file test-file)
 
-    (should
-     (equal '("Z=z")
-            process-environment))))
+    (should (equal '("Z=z")
+                   process-environment))))
 
 (ert-deftest env-set-str ()
   "Test running `env-set-str'."
@@ -58,7 +60,7 @@ This should unset the env vars defined in the file."
     (should (equal "b" (getenv "B")))))
 
 (ert-deftest env-unset-str ()
-  "Test running `env-set-str'."
+  "Test running `env-unset-str'."
   (let ((process-environment '("FOO=foo" "BAR=bar" "CATS=cats"))
         (test-str "FOO=foo\nBAR=bar"))
 
@@ -69,7 +71,7 @@ This should unset the env vars defined in the file."
 
 (ert-deftest env-set-pairs ()
   "Test running `env-set-pairs' to set env vars."
-  (with-process-environment '()
+  (let ((process-environment '()))
 
     (env-set-pairs '(("A" "a")
                      ("B" "'R$%!$KP$'")))
@@ -82,19 +84,21 @@ This should unset the env vars defined in the file."
   (let ((process-environment '("FOO=foo" "BAR=bar" "BAZ=baz")))
 
     (env-unset-pairs '(("FOO" "foo")
-                          ("BAR" "barrr")))
+                       ("BAR" "barrr")))
 
     (should (-same-items? '("BAZ=baz")
                           process-environment))))
 
-;; (ert-deftest env--unset-names/simple ()
-;;   "Test running `env-unset-names' to unset env vars."
-;;   (with-process-environment '("FOO=foo" "BAR=bar" "BAZ=baz")
-;;     (env--unset-names '("FOO" "BAR"))
-;;     (should (equal nil (getenv "FOO")))
-;;     (should (equal nil (getenv "BAR")))
-;;     (should (equal "baz" (getenv "BAZ")))
-;;     (should (equal '("BAZ=baz") process-environment))))
+(ert-deftest env-unset-names ()
+  "Test running `env-unset-names'."
+  (let ((process-environment '("FOO=foo" "BAR=bar" "BAZ=baz")))
+
+    (env-unset-names '("FOO" "BAR"))
+
+    (should (equal nil (getenv "FOO")))
+    (should (equal nil (getenv "BAR")))
+    (should (equal "baz" (getenv "BAZ")))
+    (should (equal '("BAZ=baz") process-environment))))
 
 ;; (ert-deftest env--unset-names/non-existent-name ()
 ;;   "Test running `env--unset-names' to unset non-existent env var.
@@ -123,27 +127,23 @@ This should unset the env vars defined in the file."
 ;;     (should (equal nil (getenv "CATS")))))
 
 (ert-deftest env--eval-pairs ()
-    "Test running `env--eval-pairs'."
-    (should
-     (equal
-      '(("FOO" "foo")
-        ("BAR" "bar"))
-      (env--eval-pairs '(("FOO" "foo")
-                            ("BAR" "bar")))))
+  "Test running `env--eval-pairs'."
+  (should (equal '(("FOO" "foo")
+                   ("BAR" "bar"))
+                 (env--eval-pairs '(("FOO" "foo")
+                                    ("BAR" "bar")))))
 
-    (should
-     (equal
-      '(("FOO" "foo")
-        ("BAR" "foo-bar"))
-      (env--eval-pairs '(("FOO" "foo")
-                            ("BAR" "$FOO-bar")))))
+  ;; Should be able to interpolate values
+  (should (equal '(("FOO" "foo")
+                   ("BAR" "foo-bar"))
+                 (env--eval-pairs '(("FOO" "foo")
+                                    ("BAR" "$FOO-bar")))))
 
-    ;; surround a value in single quotes to make it a literal value
-    (should
-     (-same-items?
-      '(("FOO" "f$oo")
-        ("B" "R$%!$KP$"))
-      (env--eval-pairs '(("FOO" "'f$oo'")
-                            ("B" "'R$%!$KP$'"))))))
+  ;; Should be able to surround a value in single quotes to make it a literal
+  ;; value
+  (should (-same-items? '(("FOO" "f$oo")
+                          ("B" "R$%!$KP$"))
+                        (env--eval-pairs '(("FOO" "'f$oo'")
+                                           ("B" "'R$%!$KP$'"))))))
 
 ;;; env-test.el ends here
