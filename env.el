@@ -59,6 +59,7 @@
 
 ;;; Set and unset functions
 
+;;;###autoload
 (defun env-set-file (file-path)
   "Set environment variables defined in the file at FILE-PATH.
 
@@ -71,6 +72,7 @@ format."
   (interactive (list (read-file-name "ENV file: " env-dir)))
   (env-set-str (f-read-text file-path)))
 
+;;;###autoload
 (defun env-unset-file (file-path)
   "Unset the environment variables defined in FILE-PATH.
 
