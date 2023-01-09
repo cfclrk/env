@@ -36,6 +36,12 @@
   :prefix "env-"
   :link '(url-link :tag "GitHub" "https://github.com/cfclrk/env"))
 
+(defconst env-project-dir
+  (file-name-directory (if load-in-progress
+                           load-file-name
+                         (buffer-file-name)))
+  "The directory where this project's source code is located.")
+
 (defcustom env-dir (expand-file-name "~/")
   "Directory with env files."
   :group 'env

@@ -9,22 +9,20 @@
 (require 'dash)
 (require 'env)
 (require 'f)
-(require 'projectile)
 
-;;; Test helper functions
+;;; Helper functions
 
-(defun proj-file (rel-path)
+(defun env-project-file (rel-path)
   "Return the absolute path to REL-PATH.
-REL-PATH is a path relative to this project root."
-  (f-join (projectile-project-root) rel-path))
+REL-PATH is a path relative to this project's root."
+  (expand-file-name rel-path env-project-dir))
 
-;; TODO: Add this test to show that every env var that the sh shell adds is
-;; ignored by the default filter.
+;;; Tests
 
 (ert-deftest env-set-file ()
-  "Test running `env-set-file'."
+  "Test running env-set-file."
   (let ((process-environment '())
-        (test-file (proj-file "test/examples/simple")))
+        (test-file (env-project-file "test/examples/simple")))
 
     (env-set-file test-file)
 
@@ -42,7 +40,7 @@ REL-PATH is a path relative to this project root."
 (ert-deftest env-unset-file ()
   "Test running `env-unset-file'."
   (let ((process-environment '("A=a" "B=b" "C=C" "Z=z"))
-        (test-file (proj-file "test/examples/simple")))
+        (test-file (env-project-file "test/examples/simple")))
 
     (env-unset-file test-file)
 
