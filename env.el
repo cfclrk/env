@@ -20,7 +20,8 @@
 
 ;;; Commentary:
 
-;; See documentation at https://github.com/cfclrk/env
+;; See the README.md in this package, which is also visible at:
+;; https://github.com/cfclrk/env
 
 ;;; Code:
 
@@ -123,19 +124,10 @@ each environment variable will be unset regardless of its value."
 NAMES is a list of environment variable names which may or may
 not be currently set. This function removes each name from
 `process-environment' if it is set."
-  (-each names #'env--unset-name))
+  (-each names #'env-unset-name))
 
-;;; Post-eval filters
-
-;;; Private functions
-
-(defun env--set-pair (pair)
-  "Set an environment variable PAIR."
-  (let ((name (car pair))
-        (val (car (cdr pair))))
-    (setenv name val)))
-
-(defun env--unset-name (name)
+;;;###autoload
+(defun env-unset-name (name)
   "Unset the environment variable NAME.
 
 Unset the given environment variable by removing it from
@@ -146,10 +138,11 @@ This function completely removes the variable from
 `process-environment'.
 
 Neither Emacs nor bash directly support non-ASCII characters as
-environment variables[1], but Emacs can fake it by using escaped
-sequences of unicode code points.
+environment variables (see [The Open Group][1]), but Emacs can
+fake it by using escaped sequences of unicode code points.
 
 [1]: https://pubs.opengroup.org/onlinepubs/9699919799/"
+  (interactive (list (completing-read "" (env--get-names))))
   (let* ((encoded-name (if (multibyte-string-p name)
                            (encode-coding-string name locale-coding-system t)
                          name))
@@ -158,6 +151,16 @@ sequences of unicode code points.
         (setq process-environment
               (-remove-at index process-environment))
       process-environment)))
+
+;;; Post-eval filters
+
+;;; Private functions
+
+(defun env--set-pair (pair)
+  "Set an environment variable PAIR."
+  (let ((name (car pair))
+        (val (car (cdr pair))))
+    (setenv name val)))
 
 (defun env--get-names ()
   "Return names of all current environment variables."

@@ -1,23 +1,20 @@
 # env
 
-An Emacs package that provides an API for setting and unsetting environment
-variables from files, strings, and pairs.
+An Emacs package that provides some helpful functions for working with
+environment variables and "env" files.
 
 This package uses an `sh` subshell to evaluate environment variables. So, you
 may define environment variables using shellisms.
 
-## Installation
+## Interactive API
 
-Example using straight:
+This package provides 3 interactive functions:
 
-```emacs-lisp
-(straight-use-package
- '(env :type git
-          :host github
-          :repo "cfclrk/env"))
-```
+- `env-set-file`
+- `env-unset-file`
+- `env-unset-name`
 
-## API
+## Full API
 
 ### env-set-file `(file-path)`
 
@@ -107,6 +104,22 @@ set. This function removes each name from `process-environment` if it is set.
 ```emacs-lisp
 (env-unset-names '("FOO" "BAR"))
 ```
+
+### env-unset-name `(name)
+
+**[interactive]** Unset the environment variable NAME.
+
+Unset the given environment variable by removing it from `process-environment`
+if it is there. Note that calling `setenv` with a prefix argument can 'unset' a
+variable by setting its value to nil, but the variable remains in
+`process-environment`. This function completely removes the variable from
+`process-environment`.
+
+Neither Emacs nor bash directly support non-ASCII characters as environment
+variables (see [The Open Group][1]), but Emacs can fake it by using escaped
+sequences of unicode code points.
+
+[1]: https://pubs.opengroup.org/onlinepubs/9699919799/
 
 ## File Format
 
