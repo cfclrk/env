@@ -58,7 +58,7 @@
   :group 'env
   :type 'hook)
 
-;;; Set and unset functions
+;;; Files
 
 ;;;###autoload
 (defun env-set-file (file-path)
@@ -66,10 +66,7 @@
 
 When used interactively, prompts for the file to load. The prompt
 begins in `env-dir'. When used from elisp, FILE-PATH can
-either be absolute or relative to `default-directory'.
-
-The env file at FILE-PATH should be in the standard env file
-format."
+either be absolute or relative to `default-directory'."
   (interactive (list (read-file-name "ENV file: " env-dir)))
   (env-set-str (f-read-text file-path)))
 
@@ -80,6 +77,8 @@ format."
 See the documentation for `env-set-file'."
   (interactive (list (read-file-name "ENV file: " env-dir)))
   (env-unset-str (f-read-text file-path)))
+
+;;; Strings
 
 (defun env-set-str (str)
   "Set environment variables defined in the given string STR.
@@ -94,12 +93,14 @@ lines, where each line is a key/value pair."
   "Unset environment variables defined in string STR.
 
 Parse STR like an env file. STR is split into newline-delimited
-pairs, where the key of each pair is the environment variable
-name. The value of each pair is discarded, as the environment
-variable will be unset regardless of its value."
+pairs, where each line is a key/value pair. The value of each
+pair is discarded, as the environment variable will be unset
+regardless of its value."
   (let* ((lines (s-lines (s-trim str)))
          (pairs (env--lines-to-pairs lines)))
     (env-unset-pairs pairs)))
+
+;;; Pairs
 
 (defun env-set-pairs (pairs)
   "Set the environment variables defined in the given PAIRS.
@@ -117,6 +118,14 @@ PAIRS is a list of pairs, where each pair is an environment
 variable name and value. The value in each pair doesn't matter;
 each environment variable will be unset regardless of its value."
   (env-unset-names (-map 'car pairs)))
+
+;;; Names
+
+(defun env-get-names ()
+  "Return a list of all current environment variable names."
+  (--map
+   (car (s-split "=" it))
+   process-environment))
 
 (defun env-unset-names (names)
   "Unset environment variables with the given NAMES.
@@ -142,17 +151,41 @@ environment variables (see [The Open Group][1]), but Emacs can
 fake it by using escaped sequences of unicode code points.
 
 [1]: https://pubs.opengroup.org/onlinepubs/9699919799/"
-  (interactive (list (completing-read "" (env--get-names))))
+  (interactive (list (completing-read "" (env-get-names))))
   (let* ((encoded-name (if (multibyte-string-p name)
                            (encode-coding-string name locale-coding-system t)
                          name))
-         (index (-elem-index encoded-name (env--get-names))))
+         (index (-elem-index encoded-name (env-get-names))))
     (if index
         (setq process-environment
               (-remove-at index process-environment))
       process-environment)))
 
+;;; Pre-eval filters
+
+;; Some pre-made post-eval filters. A pre-eval filter is a function that takes a
+;; list of pairs and returns a list of pairs.
+
+;; TODO!
+
 ;;; Post-eval filters
+
+;; Some pre-made post-eval filters. A post-eval filter is a function that takes
+;; a list of pairs and returns a list of pairs.
+
+(defun env-remove-sh-vars (pairs)
+  "Remove some from PAIRS.
+
+The sh shell initializes these environment varibales.
+
+This is the default post-eval filter."
+  (let ((ignored-env-vars '("DISPLAY"
+                            "PWD"
+                            "SHLVL"
+                            "_")))
+    (-filter
+     (lambda (pair) (not (member (car pair) ignored-env-vars)))
+     pairs)))
 
 ;;; Private functions
 
@@ -161,10 +194,6 @@ fake it by using escaped sequences of unicode code points.
   (let ((name (car pair))
         (val (car (cdr pair))))
     (setenv name val)))
-
-(defun env--get-names ()
-  "Return names of all current environment variables."
-  (--map (car (s-split "=" it)) process-environment))
 
 ;;;; Conversion functions
 
@@ -232,20 +261,6 @@ command to the end of the script, and then returns stdout."
                                    shell-command-switch
                                    env-script)))
       (buffer-string))))
-
-(defun env-remove-sh-vars (pairs)
-  "Remove some from PAIRS.
-
-The sh shell initializes these environment varibales.
-
-This is the default post-eval filter."
-  (let ((ignored-env-vars '("DISPLAY"
-                            "PWD"
-                            "SHLVL"
-                            "_")))
-    (-filter
-     (lambda (pair) (not (member (car pair) ignored-env-vars)))
-     pairs)))
 
 (provide 'env)
 ;;; env.el ends here

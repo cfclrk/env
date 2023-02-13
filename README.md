@@ -6,7 +6,7 @@ environment variables and "env" files.
 This package uses an `sh` subshell to evaluate environment variables. So, you
 may define environment variables using shellisms.
 
-## Interactive API
+## API
 
 This package provides 3 interactive functions:
 
@@ -14,9 +14,9 @@ This package provides 3 interactive functions:
 - `env-unset-file`
 - `env-unset-name`
 
-## Full API
+### Files
 
-### env-set-file `(file-path)`
+#### env-set-file `(file-path)`
 
 **[interactive]** Set environment variables defined in the file at FILE-PATH.
 
@@ -31,7 +31,7 @@ The env file at FILE-PATH should be in the standard env file format.
  (expand-file-name "~/.env/foo"))
 ```
 
-### env-unset-file `(file-path)`
+#### env-unset-file `(file-path)`
 
 **[interactive]** Unset the environment variables defined in FILE-PATH.
 
@@ -42,7 +42,9 @@ See the documentation for `env-set-file`.
  (expand-file-name "~/.env/foo"))
 ```
 
-### env-set-str `(str)`
+### Strings
+
+#### env-set-str `(str)`
 
 Set environment variables defined in the given string STR.
 
@@ -53,7 +55,7 @@ each line is a key/value pair.
 (env-set-str "FOO=foo\nBAR=bar")
 ```
 
-### env-unset-str `(str)`
+#### env-unset-str `(str)`
 
 Unset environment variables defined in string STR.
 
@@ -65,7 +67,9 @@ discarded, as the environment variable will be unset regardless of its value.
 (env-unset-str "FOO=foo\nBAR=bar")
 ```
 
-### env-set-pairs `(pairs)`
+### Pairs
+
+#### env-set-pairs `(pairs)`
 
 Set the environment variables defined in the given PAIRS.
 
@@ -81,7 +85,7 @@ value.
                  ("B" "'$FOO-bar'")))
 ```
 
-### env-unset-pairs `(pairs)`
+#### env-unset-pairs `(pairs)`
 
 Unset the environment variables defined in the given PAIRS.
 
@@ -92,6 +96,18 @@ unset regardless of its value.
 ```emacs-lisp
 (env-unset-pairs '(("FOO" "foo")
                    ("BAR" "bar")))
+```
+
+### Names
+
+#### env-get-names
+
+Return a list of all current environment variable names.
+
+```emacs-lisp
+(env-get-names)
+
+;; => ("HOME" "FOO" "BAR")
 ```
 
 ### env-unset-names `(names)`
@@ -105,7 +121,7 @@ set. This function removes each name from `process-environment` if it is set.
 (env-unset-names '("FOO" "BAR"))
 ```
 
-### env-unset-name `(name)
+### env-unset-name `(name)`
 
 **[interactive]** Unset the environment variable NAME.
 
@@ -116,10 +132,10 @@ variable by setting its value to nil, but the variable remains in
 `process-environment`.
 
 Neither Emacs nor bash directly support non-ASCII characters as environment
-variables (see [The Open Group][1]), but Emacs can fake it by using escaped
+variables (see [The Open Group][tog]), but Emacs can fake it by using escaped
 sequences of unicode code points.
 
-[1]: https://pubs.opengroup.org/onlinepubs/9699919799/
+[tog]: https://pubs.opengroup.org/onlinepubs/9699919799/
 
 ## File Format
 
