@@ -110,7 +110,7 @@ Return a list of all current environment variable names.
 ;; => ("HOME" "FOO" "BAR")
 ```
 
-### env-unset-names `(names)`
+#### env-unset-names `(names)`
 
 Unset environment variables with the given NAMES.
 
@@ -121,7 +121,7 @@ set. This function removes each name from `process-environment` if it is set.
 (env-unset-names '("FOO" "BAR"))
 ```
 
-### env-unset-name `(name)`
+#### env-unset-name `(name)`
 
 **[interactive]** Unset the environment variable NAME.
 
