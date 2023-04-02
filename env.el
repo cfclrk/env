@@ -81,7 +81,7 @@ See the documentation for `env-set-file'."
 ;;; Strings
 
 (defun env-set-str (str)
-  "Set environment variables defined in the given string STR.
+  "Set environment variables defined by the given string STR.
 
 Parse STR like an env file. STR is split into newline-delimited
 lines, where each line is a key/value pair."
@@ -90,7 +90,7 @@ lines, where each line is a key/value pair."
     (env-set-pairs pairs)))
 
 (defun env-unset-str (str)
-  "Unset environment variables defined in string STR.
+  "Unset environment variables defined by string STR.
 
 Parse STR like an env file. STR is split into newline-delimited
 pairs, where each line is a key/value pair. The value of each
@@ -102,8 +102,12 @@ regardless of its value."
 
 ;;; Pairs
 
+(defun env-get-pairs ()
+  "Return all current environment variables as a list of pairs."
+  (env--lines-to-pairs process-environment))
+
 (defun env-set-pairs (pairs)
-  "Set the environment variables defined in the given PAIRS.
+  "Set environment variables defined by the given PAIRS.
 
 PAIRS is a list of pairs, where each pair is an environment
 variable name and value."
@@ -141,9 +145,9 @@ not be currently set. This function removes each name from
 
 Unset the given environment variable by removing it from
 `process-environment' if it is there. Note that calling `setenv'
-with a prefix argument can 'unset' a variable by setting its
-value to nil, but the variable remains in `process-environment'.
-This function completely removes the variable from
+with a prefix argument can unset a variable by setting its value
+to nil, but the variable remains in `process-environment'. This
+function completely removes the variable from
 `process-environment'.
 
 Neither Emacs nor bash directly support non-ASCII characters as

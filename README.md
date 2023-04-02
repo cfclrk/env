@@ -1,22 +1,59 @@
 # env
 
 An Emacs package that provides some helpful functions for working with
-environment variables and "env" files.
+environment variables and env files.
 
 This package uses an `sh` subshell to evaluate environment variables. So, you
 may define environment variables using shellisms.
 
+## Table of Contents
+
+- [API](#api)
+  - [env-set-file `(file-path)`](#env-set-file-file-path)
+  - [env-unset-file `(file-path)`](#env-unset-file-file-path)
+  - [env-set-str `(str)`](#env-set-str-str)
+  - [env-unset-str `(str)`](#env-unset-str-str)
+  - [env-set-pairs `(pairs)`](#env-set-pairs-pairs)
+  - [env-unset-pairs `(pairs)`](#env-unset-pairs-pairs)
+  - [env-get-names](#env-get-names)
+  - [env-unset-names `(names)`](#env-unset-names-names)
+  - [env-unset-name `(name)`](#env-unset-name-name)
+- [File Format](#file-format)
+- [Usage from org-mode](#usage-from-org-mode)
+- [How it Works](#how-it-works)
+- [See Also](#see-also)
+
+## Example Usage
+
+Install with something like:
+
+```emacs-lisp
+(use-package env
+  :demand t
+  :elpaca (env
+           :host github
+           :repo "cfclrk/env")
+  :config
+  (setq env-dir (expand-file-name "~/.env/")))
+```
+
+Create an env file with the following contents at `~/.env/foo`:
+
+```sh
+FOO=~/foo
+BAR=$FOO/bar
+BAZ=$(pwd)
+```
+
+Now, run `M-x env-set-file`, which will prompt for a file. Navigate to
+`~/.env/foo` and press Enter. Voilà, you have three new environment variables
+set in Emacs! Check them with `M-x getenv`. Unset them with `M-x env-unset-file` (this will again prompt for a file).
+
+Besides setting (and unsetting) environment variables from env files, this package provides an API for some common operations on environment variables.
+
 ## API
 
-This package provides 3 interactive functions:
-
-- `env-set-file`
-- `env-unset-file`
-- `env-unset-name`
-
-### Files
-
-#### env-set-file `(file-path)`
+### env-set-file `(file-path)`
 
 **[interactive]** Set environment variables defined in the file at FILE-PATH.
 
@@ -31,7 +68,7 @@ The env file at FILE-PATH should be in the standard env file format.
  (expand-file-name "~/.env/foo"))
 ```
 
-#### env-unset-file `(file-path)`
+### env-unset-file `(file-path)`
 
 **[interactive]** Unset the environment variables defined in FILE-PATH.
 
@@ -42,9 +79,7 @@ See the documentation for `env-set-file`.
  (expand-file-name "~/.env/foo"))
 ```
 
-### Strings
-
-#### env-set-str `(str)`
+### env-set-str `(str)`
 
 Set environment variables defined in the given string STR.
 
@@ -55,7 +90,7 @@ each line is a key/value pair.
 (env-set-str "FOO=foo\nBAR=bar")
 ```
 
-#### env-unset-str `(str)`
+### env-unset-str `(str)`
 
 Unset environment variables defined in string STR.
 
@@ -67,11 +102,20 @@ discarded, as the environment variable will be unset regardless of its value.
 (env-unset-str "FOO=foo\nBAR=bar")
 ```
 
-### Pairs
+### env-get-pairs
 
-#### env-set-pairs `(pairs)`
+Return all current environment variables as a list of pairs.
 
-Set the environment variables defined in the given PAIRS.
+```emacs-lisp
+(env-get-pairs)
+;; => (("LANG" "en_US.UTF-8")
+;;     ("HOME" "/Users/cfclrk")
+;;     ...)
+```
+
+### env-set-pairs `(pairs)`
+
+Set the environment variables defined by the given PAIRS.
 
 PAIRS is a list of pairs, where each pair is an environment variable name and
 value.
@@ -85,7 +129,7 @@ value.
                  ("B" "'$FOO-bar'")))
 ```
 
-#### env-unset-pairs `(pairs)`
+### env-unset-pairs `(pairs)`
 
 Unset the environment variables defined in the given PAIRS.
 
@@ -98,9 +142,7 @@ unset regardless of its value.
                    ("BAR" "bar")))
 ```
 
-### Names
-
-#### env-get-names
+### env-get-names
 
 Return a list of all current environment variable names.
 
@@ -110,7 +152,7 @@ Return a list of all current environment variable names.
 ;; => ("HOME" "FOO" "BAR")
 ```
 
-#### env-unset-names `(names)`
+### env-unset-names `(names)`
 
 Unset environment variables with the given NAMES.
 
@@ -121,7 +163,7 @@ set. This function removes each name from `process-environment` if it is set.
 (env-unset-names '("FOO" "BAR"))
 ```
 
-#### env-unset-name `(name)`
+### env-unset-name `(name)`
 
 **[interactive]** Unset the environment variable NAME.
 
